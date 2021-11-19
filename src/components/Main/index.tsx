@@ -32,6 +32,7 @@ const Main = () => {
         products: allProducts (first: $first) {
           id
           title
+          price
           image {
             id
             url

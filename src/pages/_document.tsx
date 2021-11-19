@@ -39,7 +39,7 @@ export default class MyDocument extends Document {
       <Html lang="en-US">
         <Head>
           <link
-            href="https://fonts.google.com/specimen/Inter?query=inter"
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap"
             rel="stylesheet"
           />
         </Head>
