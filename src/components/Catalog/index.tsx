@@ -24,9 +24,8 @@ const Catalog = ({ products }: CatalogProps) => {
 
   return (
     <S.CatalogContainer>
-      {products?.map((product) => (
-        <S.ItemWrapper key=
-        >
+      {products?.map((product, index) => (
+        <S.ItemWrapper key={index}>
           <S.ImgWrapper src={product?.image?.url} />
           <S.DescWrapper>{product.title}</S.DescWrapper>
           <Rating
