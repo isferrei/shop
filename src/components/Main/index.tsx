@@ -3,27 +3,15 @@ import { useState } from 'react'
 import * as S from './styles'
 
 import Catalog from '../Catalog'
-import FormControl from '@mui/material/FormControl'
+import SubTotal from 'components/SubTotal'
 import MenuItem from '@mui/material/MenuItem'
-import { TextField } from '@material-ui/core'
+import Select from '@mui/material/Select'
+import InputBase from '@mui/material/InputBase'
 
-const sortBy = [
-  {
-    value: 'rating',
-    label: 'Rating'
-  },
-  {
-    value: 'price',
-    label: 'Price'
-  }
-]
+const languages = ['English', 'Deustch']
 
 const Main = () => {
-  const [sortValue, setSortValue] = useState('')
-
-  const handleChange = (event) => {
-    setSortValue(event.target.value)
-  }
+  const [searchValue, setSearchValue] = useState('')
 
   const { data } = useQuerySubscription({
     enabled: true,
@@ -47,22 +35,39 @@ const Main = () => {
 
   return (
     <S.Wrapper>
-      <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
-        <TextField
-          select
-          id="select-raiting"
-          label="SORT BY"
-          value={sortValue}
-          onChange={handleChange}
-        >
-          {sortBy.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
-      </FormControl>
-      <Catalog product={products} />
+      <S.HeaderContainer>
+        <S.LogoWrapper>
+          <h1>LOGO</h1>
+        </S.LogoWrapper>
+        <S.SearchBarWrapper>
+          <InputBase
+            sx={{ ml: 1, flex: 1 }}
+            placeholder="Search item"
+            inputProps={{ 'aria-label': 'search item' }}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+          <S.IconButton type="submit" aria-label="search">
+            <S.SearchIcon src="/img/search.svg" alt="Search icon" />
+          </S.IconButton>
+        </S.SearchBarWrapper>
+        <S.UtilitiesWrapper>
+          <S.LanguagesWrapper>
+            <Select value={languages[0]} size="small">
+              <MenuItem disabled value="">
+                <em>Select</em>
+              </MenuItem>
+              {languages.map((language: string) => (
+                <MenuItem key={language} value={language}>
+                  {language}
+                </MenuItem>
+              ))}
+            </Select>
+          </S.LanguagesWrapper>
+          <S.MobileMenu src="img/menu.svg" />
+          <SubTotal />
+        </S.UtilitiesWrapper>
+      </S.HeaderContainer>
+      <Catalog product={products} searchBy={searchValue} />
     </S.Wrapper>
   )
 }

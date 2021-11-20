@@ -1,21 +1,17 @@
-import { useState, useContext } from 'react'
-import * as S from './styles'
+import { useState, useContext, useEffect, FormEvent, useCallback } from 'react'
 import { ProductsContext } from '../../context/productsContext'
+import * as S from './styles'
 
+import Backdrop from '@mui/material/Backdrop'
 import Rating from '@mui/material/Rating'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import InputAdornment from '@mui/material/InputAdornment'
-
-export type Products = {
-  id?: string
-  title?: string
-  price?: number
-  quantity?: number
-  rating?: number
-}
+import Snackbar from '@mui/material/Snackbar'
+import Pagination from '../Pagination'
+import CircularProgress from '@mui/material/CircularProgress'
 
 export type CartItems = [
   {
@@ -28,22 +24,20 @@ export type CartItems = [
 ]
 
 export type CatalogProps = {
-  product?: Products[]
+  product?: IDataProducts[]
   maxPrice?: number
   minPrice?: number
+  searchBy?: string
 }
 
-export type ProductQuantity = [
+const sortOptions = [
   {
-    id?: string
-    quantity?: number
-  }
-]
-
-export type ProductRating = [
+    value: 'rating',
+    label: 'Rating'
+  },
   {
-    id?: string
-    rating?: number
+    value: 'price',
+    label: 'Price'
   }
 ]
 
@@ -72,77 +66,170 @@ const quantities = [
 
 const ratings = [
   {
-    value: 1,
+    value: '1',
     label: '1 and above'
   },
   {
-    value: 1,
+    value: '1',
     label: '3 and above'
   }
 ]
 
-const Catalog = ({ product }: CatalogProps) => {
-  const [rating, setRating] = useState<ProductRating[]>([])
-  const [quantity, setQuantity] = useState<ProductQuantity[]>([])
-  const [cartItems, setCartItems] = useState<IProducts | any>([])
-  const [filteredItems, setFilteredItems] = useState<IProducts | any>()
+const Catalog = ({ product, searchBy }: CatalogProps) => {
+  const [rating, setRating] = useState<IProductRating[]>([])
+  const [quantity, setQuantity] = useState<IProductQuantity[]>([])
+  const [cartItems, setCartItems] = useState<IProducts[] | undefined>([])
+  const [filteredItems, setFilteredItems] = useState<
+    IDataProducts[] | undefined
+  >(product)
+  const [myProducts, setMyProducts] = useState<IDataProducts[] | undefined>(
+    product
+  )
   const { setProducts } = useContext(ProductsContext)
-  const [minPrice, setMinPrice] = useState<number | null>()
-  const [maxPrice, setMaxPrice] = useState<number | null>()
-  const [ratingAmount, setRatingAmount] = useState<number | null>()
+  const [minPrice, setMinPrice] = useState<number | undefined>()
+  const [maxPrice, setMaxPrice] = useState<number | undefined>()
+  const [ratingAmount, setRatingAmount] = useState<number>()
+  const [sortBy, setSortBy] = useState<string>('')
+  const [open, setOpen] = useState(false)
+  const [addedItem, setAddedItem] = useState<string | undefined>('')
+  const [showFilters, setShowFilters] = useState<boolean>(false)
+  const [onLoad, setOnLoad] = useState<boolean>(false)
+  const [currentPage, setCurrentPage] = useState<number>(1)
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    filterProducts(minPrice, maxPrice, ratingAmount)
+  const onPageChanged = useCallback(
+    (event: FormEvent, page: number) => {
+      event.preventDefault()
+      setCurrentPage(page)
+    },
+    [currentPage]
+  )
 
-    console.log(minPrice, maxPrice, ratingAmount)
+  const handleClose = (reason?: string) => {
+    if (reason === 'clickaway') {
+      return
+    }
+
+    setOpen(false)
   }
 
-  const filterProducts = (
-    maxPrice: number,
-    minPrice: number,
-    ratingAmount: number
-  ) => {
-    setFilteredItems(product)
+  useEffect(() => {
+    if (filteredItems) {
+      if (filteredItems?.length === 0 && product) {
+        setOnLoad(false)
+        setFilteredItems(product)
+      } else {
+        setOnLoad(true)
+      }
+    }
+  })
 
-    if (minPrice) {
-      return setFilteredItems(
-        filteredItems?.filter((item) => item?.price >= minPrice)
+  useEffect(() => {
+    if (sortBy && product) {
+      setFilteredItems(product.sort(dynamicSort(sortBy)))
+    }
+    if (searchBy && product) {
+      searchItems(searchBy)
+    }
+  }, [searchBy, sortBy])
+
+  const searchItems = (searchBy: string) => {
+    setFilteredItems(
+      product?.filter((item) =>
+        JSON.stringify(item.title)
+          .toLowerCase()
+          .includes(searchBy.toLowerCase())
       )
-    } else if (maxPrice) {
-      return setFilteredItems(
-        filteredItems?.filter((item) => item?.price <= maxPrice)
-      )
-    } else if (ratingAmount) {
-      return setFilteredItems(
-        filteredItems.filter((item) => item.rating <= ratingAmount)
-      )
-    } else {
-      return setFilteredItems(
-        filteredItems?.filter(
-          (item) =>
-            item.rating <= maxPrice ||
-            item?.price >= minPrice ||
-            item.rating <= ratingAmount
-        )
-      )
+    )
+  }
+
+  const dynamicSort = (sortBy: string) => {
+    let sortOrder = 1
+    if (sortBy[0] === '-') {
+      sortOrder = -1
+      sortBy = sortBy.substr(1)
+    }
+    return function (a, b) {
+      let result = a[sortBy] < b[sortBy] ? -1 : a[sortBy] > b[sortBy] ? 1 : 0
+      return result * sortOrder
     }
   }
 
-  const getCartItem = (currentItem: string) => {
-    const res = cartItems?.find((item) => item.id === currentItem)
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    filterProducts(minPrice, maxPrice, ratingAmount)
+  }
 
-    if (res) {
-      if (res) {
-        return true
+  const handleChange = (event: FormEvent<HTMLFormElement>) => {
+    setRatingAmount(event.target.value)
+  }
+
+  const filterProducts = (
+    minPrice: number | undefined,
+    maxPrice: number | undefined,
+    ratingAmount: number | undefined
+  ) => {
+    if (product) {
+      if (maxPrice) {
+        return setFilteredItems(
+          product?.filter((item) => item.price <= maxPrice)
+        )
+      } else if (minPrice) {
+        return setFilteredItems(
+          product?.filter((item) => item.price >= minPrice)
+        )
+      } else if (ratingAmount) {
+        return setFilteredItems(
+          myProducts?.filter((item) => item.rating <= ratingAmount)
+        )
       } else {
-        return false
+        return setFilteredItems(
+          product?.filter(
+            (item) =>
+              item.price <= maxPrice ||
+              item.price >= minPrice ||
+              item.rating <= ratingAmount
+          )
+        )
       }
     }
   }
 
-  const handleRating = (rate: number, id: string) => {
+  const getAddedItem = (currentItem: string | undefined) => {
+    if (addedItem === currentItem) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  const handleRating = (rate: number | undefined, id: string | undefined) => {
     let itemIndex = rating.findIndex((item) => item.id === id)
+    let prodItem = myProducts?.findIndex((item) => item.id === id)
+
+    if (myProducts && prodItem) {
+      if (prodItem > -1) {
+        myProducts.splice(prodItem, 1)
+        setMyProducts([
+          ...myProducts,
+          {
+            title: myProducts[prodItem].title,
+            image: myProducts[prodItem].image,
+            id: id,
+            rating: rate
+          }
+        ])
+      } else {
+        setMyProducts([
+          ...myProducts,
+          {
+            title: myProducts[prodItem].title,
+            image: myProducts[prodItem].image,
+            id: id,
+            rating: rate
+          }
+        ])
+      }
+    }
     if (itemIndex > -1) {
       rating.splice(itemIndex, 1)
       setRating([...rating, { id: id, rating: rate }])
@@ -151,7 +238,7 @@ const Catalog = ({ product }: CatalogProps) => {
     }
   }
 
-  const getItemRate = (currentItem: string) => {
+  const getItemRate = (currentItem: string | undefined) => {
     const res = rating?.filter((item) => item.id === currentItem)
 
     if (res) {
@@ -163,7 +250,7 @@ const Catalog = ({ product }: CatalogProps) => {
     }
   }
 
-  const handleItemQuantity = (qty: number, id: string) => {
+  const handleItemQuantity = (qty: number, id: string | undefined) => {
     let itemIndex = quantity.findIndex((item) => item.id === id)
 
     if (itemIndex > -1) {
@@ -186,27 +273,27 @@ const Catalog = ({ product }: CatalogProps) => {
     }
   }
 
-  const handleItem = (id: string, title: string, price: number) => {
-    setCartItems([
-      ...cartItems,
-      {
-        id: id,
-        title: title,
-        price: price,
-        quantity: getItemQuantity(id),
-        rating: getItemRate(id)
-      }
-    ])
+  const handleItem = (id: string | undefined, title: string, price: number) => {
+    if (cartItems) {
+      setCartItems([
+        ...cartItems,
+        {
+          id: id,
+          title: title,
+          price: price,
+          quantity: getItemQuantity(id),
+          rating: getItemRate(id)
+        }
+      ])
 
-    setProducts(cartItems)
+      setProducts(cartItems)
+      setOpen(true)
+    }
   }
-
-  const sortedProducts = filteredItems ? filteredItems : product
-  console.log(filteredItems)
 
   return (
     <>
-      <S.FiltersContainer>
+      <S.FiltersContainer showFilters={showFilters}>
         <S.FormControl onSubmit={(event) => handleSubmit(event)}>
           <S.InputsWrapper>
             <OutlinedInput
@@ -214,7 +301,7 @@ const Catalog = ({ product }: CatalogProps) => {
               sx={{ width: '112px' }}
               id="outlined-adornment-max_price"
               value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
+              onChange={(e) => setMaxPrice(Number(e.target.value))}
               startAdornment={
                 <InputAdornment position="start">€ </InputAdornment>
               }
@@ -229,7 +316,7 @@ const Catalog = ({ product }: CatalogProps) => {
               sx={{ width: '112px' }}
               id="outlined-adornment-min_price"
               value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
+              onChange={(e) => setMinPrice(Number(e.target.value))}
               startAdornment={
                 <InputAdornment position="start">€</InputAdornment>
               }
@@ -240,17 +327,15 @@ const Catalog = ({ product }: CatalogProps) => {
               placeholder="min"
             />
             <TextField
-              id="outlined-select-currency"
               select
               sx={{ width: '112px' }}
               size="small"
               label="RATING"
-              value={ratingAmount}
-              onChange={(e) => setRatingAmount(e.target.value)}
-              placeholder="Please select rating amount"
+              value={String(ratingAmount)}
+              onChange={handleChange}
             >
-              {ratings.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
+              {ratings.map((option, index) => (
+                <MenuItem key={`rate-` + index} value={option.value}>
                   {option.label}
                 </MenuItem>
               ))}
@@ -261,18 +346,45 @@ const Catalog = ({ product }: CatalogProps) => {
               Apply filters
             </Button>
           </S.ButtonWrapper>
+          <S.MobileTitle>Filters</S.MobileTitle>
         </S.FormControl>
+        <S.CloseBtn
+          src="/img/close.svg"
+          onClick={() => setShowFilters(!showFilters)}
+        />
       </S.FiltersContainer>
+      <S.MobileOptions>
+        <S.SortByWrapper>
+          <TextField
+            select
+            id="select-raiting"
+            size="small"
+            fullWidth
+            label="SORT BY"
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value)}
+          >
+            {sortOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>{' '}
+        </S.SortByWrapper>
+        <S.FiltersBtn onClick={() => setShowFilters(true)}>
+          Filters
+        </S.FiltersBtn>
+      </S.MobileOptions>
       <S.CatalogContainer>
-        {sortedProducts.map((prod, index) => (
+        {filteredItems?.map((prod, index) => (
           <S.ItemWrapper key={index}>
-            <S.ImgWrapper src={prod?.image?.url} />
+            <S.ImgWrapper src={prod.image?.url} />
             <S.DescWrapper>{prod.title}</S.DescWrapper>
             <Rating
               name="simple-controlled"
               value={getItemRate(prod.id)}
-              onChange={(event) => {
-                handleRating(event.target.value, prod.id)
+              onChange={(event, value) => {
+                handleRating(value, prod.id)
               }}
             />
             <S.Row>
@@ -287,7 +399,7 @@ const Catalog = ({ product }: CatalogProps) => {
                   variant="outlined"
                   value={getItemQuantity(prod.id)}
                   onChange={(event) =>
-                    handleItemQuantity(event.target.value, prod.id)
+                    handleItemQuantity(Number(event.target.value), prod.id)
                   }
                 >
                   {quantities.map((option) => (
@@ -301,9 +413,12 @@ const Catalog = ({ product }: CatalogProps) => {
             <Button
               variant="outlined"
               sx={{ width: '100%' }}
-              onClick={() => handleItem(prod.id, prod.title, prod.price)}
+              onClick={() => {
+                handleItem(prod.id, prod.title, prod.price)
+                setAddedItem(prod.id)
+              }}
             >
-              {getCartItem(prod.id) ? (
+              {getAddedItem(prod.id) && open ? (
                 <>
                   <S.IconWrapper src="/img/check.svg" alt="Check icon" />
                   Added
@@ -315,6 +430,25 @@ const Catalog = ({ product }: CatalogProps) => {
           </S.ItemWrapper>
         ))}
       </S.CatalogContainer>
+      <Pagination
+        totalRecords={product?.length}
+        pageLimit={6}
+        pageNeighbours={3}
+        onPageChanged={onPageChanged}
+        currentPage={currentPage}
+      />
+      <Snackbar open={open} autoHideDuration={2000} onClose={() => handleClose}>
+        <S.Alert onClick={() => handleClose}>
+          <S.IconWrapper src="/img/check-bold.svg" />
+          Added to cart successfully
+        </S.Alert>
+      </Snackbar>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!onLoad}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </>
   )
 }
