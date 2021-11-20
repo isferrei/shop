@@ -117,6 +117,7 @@ const Catalog = ({ product, searchBy }: CatalogProps) => {
       if (filteredItems?.length === 0 && product) {
         setOnLoad(false)
         setFilteredItems(product)
+        setMyProducts(product)
       } else {
         setOnLoad(true)
       }
@@ -124,13 +125,17 @@ const Catalog = ({ product, searchBy }: CatalogProps) => {
   })
 
   useEffect(() => {
+    sortItems()
+  }, [searchBy, sortBy])
+
+  const sortItems = () => {
     if (sortBy && product) {
-      setFilteredItems(product.sort(dynamicSort(sortBy)))
+      return setFilteredItems(product.sort(dynamicSort(sortBy)))
     }
     if (searchBy && product) {
-      searchItems(searchBy)
+      return searchItems(searchBy)
     }
-  }, [searchBy, sortBy])
+  }
 
   const searchItems = (searchBy: string) => {
     setFilteredItems(
@@ -342,7 +347,11 @@ const Catalog = ({ product, searchBy }: CatalogProps) => {
             </TextField>
           </S.InputsWrapper>
           <S.ButtonWrapper>
-            <Button variant="outlined" type="submit">
+            <Button
+              variant="outlined"
+              type="submit"
+              onClick={() => setShowFilters(false)}
+            >
               Apply filters
             </Button>
           </S.ButtonWrapper>
@@ -362,7 +371,10 @@ const Catalog = ({ product, searchBy }: CatalogProps) => {
             fullWidth
             label="SORT BY"
             value={sortBy}
-            onChange={(event) => setSortBy(event.target.value)}
+            onChange={(event) => {
+              setSortBy(event.target.value)
+              sortItems()
+            }}
           >
             {sortOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -432,12 +444,12 @@ const Catalog = ({ product, searchBy }: CatalogProps) => {
       </S.CatalogContainer>
       <Pagination
         totalRecords={product?.length}
-        pageLimit={6}
-        pageNeighbours={3}
+        pageLimit={5}
+        pageNeighbours={1}
         onPageChanged={onPageChanged}
         currentPage={currentPage}
       />
-      <Snackbar open={open} autoHideDuration={2000} onClose={() => handleClose}>
+      <Snackbar open={open} autoHideDuration={2000} onClose={handleClose}>
         <S.Alert onClick={() => handleClose}>
           <S.IconWrapper src="/img/check-bold.svg" />
           Added to cart successfully
