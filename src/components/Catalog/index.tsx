@@ -6,15 +6,15 @@ import Rating from '@mui/material/Rating'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
+import OutlinedInput from '@mui/material/OutlinedInput'
+import InputAdornment from '@mui/material/InputAdornment'
 
 export type Products = {
   id?: string
   title?: string
   price?: number
-  image?: {
-    id: string
-    url: string
-  }
+  quantity?: number
+  rating?: number
 }
 
 export type CartItems = [
@@ -70,11 +70,64 @@ const quantities = [
   }
 ]
 
+const ratings = [
+  {
+    value: 1,
+    label: '1 and above'
+  },
+  {
+    value: 1,
+    label: '3 and above'
+  }
+]
+
 const Catalog = ({ product }: CatalogProps) => {
   const [rating, setRating] = useState<ProductRating[]>([])
   const [quantity, setQuantity] = useState<ProductQuantity[]>([])
   const [cartItems, setCartItems] = useState<IProducts | any>([])
-  const { products, setProducts } = useContext(ProductsContext)
+  const [filteredItems, setFilteredItems] = useState<IProducts | any>()
+  const { setProducts } = useContext(ProductsContext)
+  const [minPrice, setMinPrice] = useState<number | null>()
+  const [maxPrice, setMaxPrice] = useState<number | null>()
+  const [ratingAmount, setRatingAmount] = useState<number | null>()
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    filterProducts(minPrice, maxPrice, ratingAmount)
+
+    console.log(minPrice, maxPrice, ratingAmount)
+  }
+
+  const filterProducts = (
+    maxPrice: number,
+    minPrice: number,
+    ratingAmount: number
+  ) => {
+    setFilteredItems(product)
+
+    if (minPrice) {
+      return setFilteredItems(
+        filteredItems?.filter((item) => item?.price >= minPrice)
+      )
+    } else if (maxPrice) {
+      return setFilteredItems(
+        filteredItems?.filter((item) => item?.price <= maxPrice)
+      )
+    } else if (ratingAmount) {
+      return setFilteredItems(
+        filteredItems.filter((item) => item.rating <= ratingAmount)
+      )
+    } else {
+      return setFilteredItems(
+        filteredItems?.filter(
+          (item) =>
+            item.rating <= maxPrice ||
+            item?.price >= minPrice ||
+            item.rating <= ratingAmount
+        )
+      )
+    }
+  }
 
   const getCartItem = (currentItem: string) => {
     const res = cartItems?.find((item) => item.id === currentItem)
@@ -121,8 +174,6 @@ const Catalog = ({ product }: CatalogProps) => {
     }
   }
 
-  console.log(products)
-
   const getItemQuantity = (currentItem: string) => {
     const res = quantity?.filter((item) => item.id === currentItem)
 
@@ -150,59 +201,121 @@ const Catalog = ({ product }: CatalogProps) => {
     setProducts(cartItems)
   }
 
+  const sortedProducts = filteredItems ? filteredItems : product
+  console.log(filteredItems)
+
   return (
-    <S.CatalogContainer>
-      {product?.map((prod, index) => (
-        <S.ItemWrapper key={index}>
-          <S.ImgWrapper src={prod?.image?.url} />
-          <S.DescWrapper>{prod.title}</S.DescWrapper>
-          <Rating
-            name="simple-controlled"
-            value={getItemRate(prod.id)}
-            onChange={(event) => {
-              handleRating(event.target.value, prod.id)
-            }}
-          />
-          <S.Row>
-            <S.PriceWrapper>€{prod.price}</S.PriceWrapper>
-            <S.SelectWrapper>
-              <TextField
-                id="standard-select"
-                select
-                fullWidth
-                label=""
-                size="small"
-                variant="outlined"
-                value={getItemQuantity(prod.id)}
-                onChange={(event) =>
-                  handleItemQuantity(event.target.value, prod.id)
-                }
-              >
-                {quantities.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </S.SelectWrapper>
-          </S.Row>
-          <Button
-            variant="outlined"
-            sx={{ width: '100%' }}
-            onClick={() => handleItem(prod.id, prod.title, prod.price)}
-          >
-            {getCartItem(prod.id) ? (
-              <>
-                <S.IconWrapper src="/img/check.svg" alt="Check icon" />
-                Added
-              </>
-            ) : (
-              'Add to cart'
-            )}
-          </Button>
-        </S.ItemWrapper>
-      ))}
-    </S.CatalogContainer>
+    <>
+      <S.FiltersContainer>
+        <S.FormControl onSubmit={(event) => handleSubmit(event)}>
+          <S.InputsWrapper>
+            <OutlinedInput
+              size="small"
+              sx={{ width: '112px' }}
+              id="outlined-adornment-max_price"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              startAdornment={
+                <InputAdornment position="start">€ </InputAdornment>
+              }
+              aria-describedby="outlined-max_price"
+              inputProps={{
+                'aria-label': 'max_price'
+              }}
+              placeholder="max"
+            />
+            <OutlinedInput
+              size="small"
+              sx={{ width: '112px' }}
+              id="outlined-adornment-min_price"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              startAdornment={
+                <InputAdornment position="start">€</InputAdornment>
+              }
+              aria-describedby="outlined-min_price"
+              inputProps={{
+                'aria-label': 'min_price'
+              }}
+              placeholder="min"
+            />
+            <TextField
+              id="outlined-select-currency"
+              select
+              sx={{ width: '112px' }}
+              size="small"
+              label="RATING"
+              value={ratingAmount}
+              onChange={(e) => setRatingAmount(e.target.value)}
+              placeholder="Please select rating amount"
+            >
+              {ratings.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </S.InputsWrapper>
+          <S.ButtonWrapper>
+            <Button variant="outlined" type="submit">
+              Apply filters
+            </Button>
+          </S.ButtonWrapper>
+        </S.FormControl>
+      </S.FiltersContainer>
+      <S.CatalogContainer>
+        {sortedProducts.map((prod, index) => (
+          <S.ItemWrapper key={index}>
+            <S.ImgWrapper src={prod?.image?.url} />
+            <S.DescWrapper>{prod.title}</S.DescWrapper>
+            <Rating
+              name="simple-controlled"
+              value={getItemRate(prod.id)}
+              onChange={(event) => {
+                handleRating(event.target.value, prod.id)
+              }}
+            />
+            <S.Row>
+              <S.PriceWrapper>€{prod.price}</S.PriceWrapper>
+              <S.SelectWrapper>
+                <TextField
+                  id="standard-select"
+                  select
+                  fullWidth
+                  label=""
+                  size="small"
+                  variant="outlined"
+                  value={getItemQuantity(prod.id)}
+                  onChange={(event) =>
+                    handleItemQuantity(event.target.value, prod.id)
+                  }
+                >
+                  {quantities.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </S.SelectWrapper>
+            </S.Row>
+            <Button
+              variant="outlined"
+              sx={{ width: '100%' }}
+              onClick={() => handleItem(prod.id, prod.title, prod.price)}
+            >
+              {getCartItem(prod.id) ? (
+                <>
+                  <S.IconWrapper src="/img/check.svg" alt="Check icon" />
+                  Added
+                </>
+              ) : (
+                'Add to cart'
+              )}
+            </Button>
+          </S.ItemWrapper>
+        ))}
+      </S.CatalogContainer>
+    </>
   )
 }
 
