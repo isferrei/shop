@@ -54,9 +54,6 @@ const Main = () => {
           label="SORT BY"
           value={sortValue}
           onChange={handleChange}
-          SelectProps={{
-            native: true
-          }}
         >
           {sortBy.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -65,7 +62,7 @@ const Main = () => {
           ))}
         </TextField>
       </FormControl>
-      <Catalog products={products} />
+      <Catalog product={products} />
     </S.Wrapper>
   )
 }

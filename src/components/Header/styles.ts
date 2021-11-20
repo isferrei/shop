@@ -19,4 +19,5 @@ export const LogoWrapper = styled.div`
 export const UtilitiesWrapper = styled.div`
   display: flex;
   flex-direction: row;
+  gap: 30px;
 `

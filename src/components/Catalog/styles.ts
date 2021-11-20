@@ -4,7 +4,7 @@ export const CatalogContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(175px, 288px));
   place-content: center;
-  width: 100%;
+  max-width: 1000px;
   gap: 24px;
   margin-top: 24px;
 
@@ -65,7 +65,11 @@ export const Row = styled.div`
 `
 export const SelectWrapper = styled.div`
   width: 90px;
-  .css-ghsjzk-muiinputbase-root-muiinput-root {
-    font-size: 16px;
-  }
+`
+
+export const IconWrapper = styled.img`
+  width: 10px;
+  height: 10px;
+  transition: all 0.3s;
+  margin-right: 10px;
 `

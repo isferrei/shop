@@ -1,5 +1,6 @@
 import { AppProps } from 'next/app'
 import Head from 'next/head'
+import ProductsProvider from '../context/productsContext'
 
 import GlobalStyles from 'styles/global'
 
@@ -14,7 +15,9 @@ function App({ Component, pageProps }: AppProps) {
         <meta name="theme-color" content="#000" />
       </Head>
       <GlobalStyles />
-      <Component {...pageProps} />
+      <ProductsProvider>
+        <Component {...pageProps} />
+      </ProductsProvider>
     </>
   )
 }

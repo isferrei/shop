@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import * as S from './styles'
+import { ProductsContext } from '../../context/productsContext'
 
 import Rating from '@mui/material/Rating'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
+import MenuItem from '@mui/material/MenuItem'
 
 export type Products = {
   id?: string
@@ -15,9 +17,35 @@ export type Products = {
   }
 }
 
+export type CartItems = [
+  {
+    id: string
+    title: string
+    price: number
+    quantity: number
+    rating: number
+  }
+]
+
 export type CatalogProps = {
-  products?: Products[]
+  product?: Products[]
+  maxPrice?: number
+  minPrice?: number
 }
+
+export type ProductQuantity = [
+  {
+    id?: string
+    quantity?: number
+  }
+]
+
+export type ProductRating = [
+  {
+    id?: string
+    rating?: number
+  }
+]
 
 const quantities = [
   {
@@ -42,49 +70,135 @@ const quantities = [
   }
 ]
 
-const Catalog = ({ products }: CatalogProps) => {
-  const [value, setValue] = useState<number | null>(1)
-  const [quantity, setQuantity] = useState<number | null>(1)
+const Catalog = ({ product }: CatalogProps) => {
+  const [rating, setRating] = useState<ProductRating[]>([])
+  const [quantity, setQuantity] = useState<ProductQuantity[]>([])
+  const [cartItems, setCartItems] = useState<IProducts | any>([])
+  const { products, setProducts } = useContext(ProductsContext)
 
-  const handleChange = (event) => {
-    setQuantity(event.target.value)
+  console.log(products)
+
+  const getCartItem = (currentItem: string) => {
+    const res = cartItems?.find((item) => item.id === currentItem)
+
+    if (res) {
+      if (res) {
+        return true
+      } else {
+        return false
+      }
+    }
+  }
+
+  const handleRating = (rate: number, id: string) => {
+    let itemIndex = rating.findIndex((item) => item.id === id)
+    if (itemIndex > -1) {
+      rating.splice(itemIndex, 1)
+      setRating([...rating, { id: id, rating: rate }])
+    } else {
+      setRating([...rating, { id: id, rating: rate }])
+    }
+  }
+
+  const getItemRate = (currentItem: string) => {
+    const res = rating?.filter((item) => item.id === currentItem)
+
+    if (res) {
+      if (res.length > 0) {
+        return res[0].rating
+      } else {
+        return 1
+      }
+    }
+  }
+
+  const handleItemQuantity = (qtd: number, id: string) => {
+    let itemIndex = quantity.findIndex((item) => item.id === id)
+
+    if (itemIndex > -1) {
+      quantity.splice(itemIndex, 1)
+      setQuantity([...quantity, { id: id, quantity: qtd }])
+    } else {
+      setQuantity([...quantity, { id: id, quantity: qtd }])
+    }
+  }
+
+  const getItemQuantity = (currentItem: string) => {
+    const res = quantity?.filter((item) => item.id === currentItem)
+
+    if (res) {
+      if (res.length > 0) {
+        return res[0].quantity
+      } else {
+        return 1
+      }
+    }
+  }
+
+  const handleItem = (id: string, title: string, price: number) => {
+    setCartItems([
+      ...cartItems,
+      {
+        id: id,
+        title: title,
+        price: price,
+        quantity: getItemQuantity(id),
+        rating: getItemRate(id)
+      }
+    ])
+
+    setProducts(cartItems)
   }
 
   return (
     <S.CatalogContainer>
-      {products?.map((product, index) => (
+      {product?.map((prod, index) => (
         <S.ItemWrapper key={index}>
-          <S.ImgWrapper src={product?.image?.url} />
-          <S.DescWrapper>{product.title}</S.DescWrapper>
+          <S.ImgWrapper src={prod?.image?.url} />
+          <S.DescWrapper>{prod.title}</S.DescWrapper>
           <Rating
             name="simple-controlled"
-            value={value}
-            onChange={(event, newValue) => {
-              setValue(newValue)
+            value={getItemRate(prod.id)}
+            onChange={(event) => {
+              handleRating(event.target.value, prod.id)
             }}
           />
           <S.Row>
-            <S.PriceWrapper>€{product.price}</S.PriceWrapper>
+            <S.PriceWrapper>€{prod.price}</S.PriceWrapper>
             <S.SelectWrapper>
               <TextField
                 id="standard-select"
                 select
                 fullWidth
-                label="" 
-                variant="standard"
-                value={quantity}
-                onChange={handleChange}
+                label=""
+                size="small"
+                variant="outlined"
+                value={getItemQuantity(prod.id)}
+                onChange={(event) =>
+                  handleItemQuantity(event.target.value, prod.id)
+                }
               >
                 {quantities.map((option) => (
-                  <option key={option.value} value={option.value}>
+                  <MenuItem key={option.value} value={option.value}>
                     {option.label}
-                  </option>
+                  </MenuItem>
                 ))}
               </TextField>
             </S.SelectWrapper>
           </S.Row>
-          <Button variant="outlined" sx={{ width: '100%' }}>
-            Add to cart
+          <Button
+            variant="outlined"
+            sx={{ width: '100%' }}
+            onClick={() => handleItem(prod.id, prod.title, prod.price)}
+          >
+            {getCartItem(prod.id) ? (
+              <>
+                <S.IconWrapper src="/img/check.svg" alt="Check icon" />
+                Added
+              </>
+            ) : (
+              'Add to cart'
+            )}
           </Button>
         </S.ItemWrapper>
       ))}

@@ -7,6 +7,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
+import products from '../../context/productsContext'
 
 interface State {
   max_price: string
@@ -41,6 +42,8 @@ const FilterSection = () => {
       setValues({ ...values, [prop]: event.target.value })
     }
 
+  console.log(products)
+
   return (
     <S.SectionContainer>
       <FormControl sx={{ m: 1 }} variant="outlined">
@@ -73,7 +76,7 @@ const FilterSection = () => {
             id="outlined-select-currency"
             select
             label="RATING"
-            value={ratings}
+            value={values.rating_amount}
             onChange={handleChange('rating_amount')}
             placeholder="Please select rating amount"
           >

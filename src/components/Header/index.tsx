@@ -16,7 +16,7 @@ const Header = () => (
     </S.LogoWrapper>
     <SearchBar />
     <S.UtilitiesWrapper>
-      <Select value={languages[0]} input={<Input label="Name" />}>
+      <Select value={languages[0]} size='small'>
         <MenuItem disabled value="">
           <em>Select</em>
         </MenuItem>

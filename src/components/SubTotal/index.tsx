@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import * as S from './styles'
 
-import Badge from '@mui/material/Badge'
+import Badge from '@mui/material/Badge' 
 
 const SubTotal = () => {
   const [count, setCount] = useState(0)
+
+  const getTotal = () => {}
 
   return (
     <S.SubTotalContainer>
@@ -15,7 +17,7 @@ const SubTotal = () => {
           onClick={() => setCount(1)}
         />
       </Badge>
-      <span>Sub total: 240.2 €</span>
+      <span>Sub total: {getTotal()} €</span>
     </S.SubTotalContainer>
   )
 }
