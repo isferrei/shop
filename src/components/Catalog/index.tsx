@@ -76,8 +76,6 @@ const Catalog = ({ product }: CatalogProps) => {
   const [cartItems, setCartItems] = useState<IProducts | any>([])
   const { products, setProducts } = useContext(ProductsContext)
 
-  console.log(products)
-
   const getCartItem = (currentItem: string) => {
     const res = cartItems?.find((item) => item.id === currentItem)
 
@@ -112,16 +110,18 @@ const Catalog = ({ product }: CatalogProps) => {
     }
   }
 
-  const handleItemQuantity = (qtd: number, id: string) => {
+  const handleItemQuantity = (qty: number, id: string) => {
     let itemIndex = quantity.findIndex((item) => item.id === id)
 
     if (itemIndex > -1) {
       quantity.splice(itemIndex, 1)
-      setQuantity([...quantity, { id: id, quantity: qtd }])
+      setQuantity([...quantity, { id: id, quantity: qty }])
     } else {
-      setQuantity([...quantity, { id: id, quantity: qtd }])
+      setQuantity([...quantity, { id: id, quantity: qty }])
     }
   }
+
+  console.log(products)
 
   const getItemQuantity = (currentItem: string) => {
     const res = quantity?.filter((item) => item.id === currentItem)

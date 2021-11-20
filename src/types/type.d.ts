@@ -6,8 +6,15 @@ interface IProducts {
   rating: number
 }
 
+interface IFilters {
+  max_price?: number
+  min_price?: number
+  rating_amount?: number
+}
+
 type ContextType = {
   products: IProducts[]
   saveProduct: (product: IProducts) => void
   updateProduct: (id: number) => void
+  filters: IFilters[]
 }

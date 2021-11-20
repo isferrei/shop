@@ -7,7 +7,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
-import products from '../../context/productsContext'
+import { ProductsContext } from '../../context/productsContext'
 
 interface State {
   max_price: string
@@ -36,13 +36,13 @@ const FilterSection = () => {
     min_price: '',
     rating_amount: ''
   })
+  const { products, setProducts } = useContext(ProductsContext)
+  
 
   const handleChange =
     (prop: keyof State) => (event: React.ChangeEvent<HTMLInputElement>) => {
       setValues({ ...values, [prop]: event.target.value })
     }
-
-  console.log(products)
 
   return (
     <S.SectionContainer>
